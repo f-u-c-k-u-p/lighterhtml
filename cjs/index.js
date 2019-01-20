@@ -90,17 +90,15 @@ function unroll(template) {
   const {i, length, stack} = current;
   current.i++;
   if (i < length) {
-    const {tagger, wire} = stack[i];
-    tagger.apply(null, unrollArray(_, 1));
-    return wire;
+    const {tagger, literal, wire} = stack[i];
+    const args = unrollArray(_, 1);
+    if (args[0] === literal) {
+      tagger.apply(null, unrollArray(_, 1));
+      return wire;
+    }
+    return wireIndex($, _, stack, i);
   }
-  else {
-    const tagger = new Tagger($);
-    const stacked = {tagger, wire: null};
-    current.length = stack.push(stacked);
-    stacked.wire = wireContent(tagger.apply(null, unrollArray(_, 1)));
-    return stacked.wire;
-  }
+  return wireIndex($, _, stack, -1);
 }
 
 function unrollArray(array, i) {
@@ -156,4 +154,15 @@ function wireContent(node) {
   return length === 1 ?
     childNodes[0] :
     (length ? new Wire(childNodes) : node);
+}
+
+function wireIndex($, _, stack, i) {
+  const tagger = new Tagger($);
+  const stacked = {tagger, literal: _[0], wire: null};
+  if (i < 0)
+    current.length = stack.push(stacked);
+  else
+    stack[i] = stacked;
+  stacked.wire = wireContent(tagger.apply(null, unrollArray(_, 1)));
+  return stacked.wire;
 }

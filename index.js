@@ -1361,20 +1361,19 @@ var lighterhtml = (function (document,exports) {
     if (i < length) {
       var _stack$i = stack[i],
           tagger = _stack$i.tagger,
+          literal = _stack$i.literal,
           wire = _stack$i.wire;
-      tagger.apply(null, unrollArray(_, 1));
-      return wire;
-    } else {
-      var _tagger = new Tagger($);
+      var args = unrollArray(_, 1);
 
-      var stacked = {
-        tagger: _tagger,
-        wire: null
-      };
-      current.length = stack.push(stacked);
-      stacked.wire = wireContent(_tagger.apply(null, unrollArray(_, 1)));
-      return stacked.wire;
+      if (args[0] === literal) {
+        tagger.apply(null, unrollArray(_, 1));
+        return wire;
+      }
+
+      return wireIndex($, _, stack, i);
     }
+
+    return wireIndex($, _, stack, -1);
   }
 
   function unrollArray(array, i) {
@@ -1426,6 +1425,18 @@ var lighterhtml = (function (document,exports) {
     var childNodes = node.childNodes;
     var length = childNodes.length;
     return length === 1 ? childNodes[0] : length ? new Wire(childNodes) : node;
+  }
+
+  function wireIndex($, _, stack, i) {
+    var tagger = new Tagger($);
+    var stacked = {
+      tagger: tagger,
+      literal: _[0],
+      wire: null
+    };
+    if (i < 0) current.length = stack.push(stacked);else stack[i] = stacked;
+    stacked.wire = wireContent(tagger.apply(null, unrollArray(_, 1)));
+    return stacked.wire;
   }
 
   exports.hook = hook;
